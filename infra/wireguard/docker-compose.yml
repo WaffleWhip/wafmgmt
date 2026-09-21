@@ -1,0 +1,18 @@
+services:
+  waf-wireguard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: waf-wireguard:latest
+    container_name: waf-wireguard
+    restart: always
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      - WG_WAN_IP=${WG_WAN_IP:-}
+      - WG_WAN_IF=${WG_WAN_IF:-}
+      - WG_WAN_GW=${WG_WAN_GW:-}
+    volumes:
+      - ${WAFMGMT_DATA_DIR:-../../data}/wireguard:/etc/wireguard

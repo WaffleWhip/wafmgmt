@@ -1,0 +1,10 @@
+**/node_modules
+**/.svelte-kit
+**/build
+**/dist
+**/*.log
+.git
+.env
+.env.local
+data/
+sessions

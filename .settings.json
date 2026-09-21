@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "labId": "[lab-id]",
+  "config": {
+    "brandName": "[brand]",
+    "brandSubtitle": "[subheader]",
+    "logoUrl": "/logo.png",
+    "title": "[app-title]",
+    "subtitle": "[app-subtitle]",
+    "primaryColor": "[primary-color]",
+    "accentColor": "[accent-color]",
+    "adminUser": "[admin-user]",
+    "adminPass": "[admin-pass]",
+    "endpointWan": "[endpoint:port]",
+    "interface": "[wg-interface]",
+    "address": "[wg-address]",
+    "listenPort": 51820,
+    "dnsDefault": "[dns-default]",
+    "allowedIpsTemplate": "[allowed-ips]",
+    "keepaliveDefault": 15
+  },
+  "services": [],
+  "routes": [],
+  "caddyRoutes": [],
+  "peers": {}
+}

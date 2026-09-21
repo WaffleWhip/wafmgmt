@@ -1,0 +1,15 @@
+services:
+  usp-broker:
+    image: eclipse-mosquitto:latest
+    container_name: usp-broker
+    ports:
+      - "1883:1883"
+      - "8083:8083"
+    volumes:
+      - ../../data/usp/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ../../data/usp/mosquitto/data:/mosquitto/data
+      - ../../data/usp/mosquitto/log:/mosquitto/log
+    restart: unless-stopped
+
+  # The former usp-controller service is now part of the single
+  # wafmgmt-app process (apps/server). Only the broker lives here.

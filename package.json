@@ -1,0 +1,21 @@
+{
+  "name": "wafmgmt",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run backend/app/index.ts",
+    "build:server": "bun build backend/app/index.ts --target=bun --outfile dist/server.js",
+    "arch:lint": "bun run backend/scripts/arch-lint.ts",
+    "backup:dbs": "bun run backend/scripts/backup-sqlite.ts",
+    "usp:snapshot": "bun run backend/scripts/usp-snapshot.ts",
+    "usp:call": "bun run backend/scripts/usp-call.ts"
+  },
+  "dependencies": {
+    "mqtt": "^5.15.2",
+    "protobufjs": "^8.8.0"
+  },
+  "devDependencies": {
+    "dependency-cruiser": "^18.4.0",
+    "typescript": "^7.0.2"
+  }
+}

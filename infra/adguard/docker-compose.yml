@@ -1,0 +1,9 @@
+services:
+  waf-adguard:
+    image: adguard/adguardhome:latest
+    container_name: waf-adguard
+    restart: always
+    network_mode: host
+    volumes:
+      - ${WAFMGMT_DATA_DIR:-../../data}/adguard/work:/opt/adguardhome/work
+      - ${WAFMGMT_DATA_DIR:-../../data}/adguard/conf:/opt/adguardhome/conf

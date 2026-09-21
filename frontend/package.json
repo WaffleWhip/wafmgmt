@@ -1,0 +1,30 @@
+{
+  "name": "wafmgmt-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "highlight.js": "^11.10.0",
+    "lucide-svelte": "^1.0.1",
+    "marked": "^18.0.11",
+    "qrcode": "^1.5.4",
+    "svelte": "^5.57.0",
+    "uplot": "^1.6.32",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-node": "^5.2.12",
+    "@sveltejs/kit": "^2.70.3",
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.2.2"
+  }
+}

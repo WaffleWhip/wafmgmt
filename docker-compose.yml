@@ -1,0 +1,28 @@
+name: wafmgmt
+
+# All service addresses/ports are configurable in .env (see .env.example).
+# Defaults assume a single host: frontend <-> backend on 127.0.0.1.
+#
+# Detachable services: comment out an include line to drop that service.
+# Example: remove "infra/adguard/docker-compose.yml" to run without AdGuard,
+# or "infra/nginx/tls.docker-compose.yml" to run without the TLS proxy.
+include:
+  - backend/app/docker-compose.yml
+  - infra/wireguard/docker-compose.yml
+  - infra/adguard/docker-compose.yml
+  - infra/nginx/tls.docker-compose.yml
+
+services:
+  waf-frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: waf-frontend:latest
+    container_name: waf-frontend
+    restart: always
+    # Auto-config: values from .env are injected as-is (optional file).
+    # Set PORT and BACKEND_URL there.
+    env_file:
+      - path: .env
+        required: false
+    network_mode: host

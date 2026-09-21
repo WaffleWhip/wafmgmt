@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+.svelte-kit/
+build/
+dist/
+
+# Logs & Environment
+*.log
+.env
+.env.local
+.DS_Store
+Thumbs.db
+nul
+
+# Runtime data & temp
+data/
+sessions/*.json
+
+# Docs (local + lab host only; contains device dumps)
+docs/

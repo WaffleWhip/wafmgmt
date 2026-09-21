@@ -1,0 +1,14 @@
+services:
+  proxy-tls:
+    image: nginx:alpine
+    container_name: proxy-tls
+    network_mode: host
+    environment:
+      - PROXY_DOMAIN=${PROXY_DOMAIN:-localhost}
+      - WAF_FRONTEND_UPSTREAM=${WAF_FRONTEND_UPSTREAM:-http://127.0.0.1:3001}
+      - TERMINAL_UPSTREAM=${TERMINAL_UPSTREAM:-http://127.0.0.1:3000}
+    volumes:
+      - ./templates:/etc/nginx/templates:ro
+      - ${WAFMGMT_DATA_DIR:-../../data}/nginx/conf.d:/etc/nginx/conf.d
+      - ${WAFMGMT_DATA_DIR:-../../data}/nginx/certs:/etc/nginx/certs:ro
+    restart: unless-stopped

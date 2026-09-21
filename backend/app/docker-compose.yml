@@ -1,0 +1,44 @@
+services:
+  wafmgmt-app:
+    build:
+      context: ../..
+      dockerfile: backend/app/Dockerfile
+    image: wafmgmt-app:latest
+    container_name: wafmgmt-app
+    restart: always
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      - PORT=${BACKEND_PORT:-3000}
+      - LAB_ID=${LAB_ID:-[lab-id]}
+      - DATA_DIR=/data
+      # SQLite per bounded context (identity DB is reserved for the identity module)
+      - USP_DB_PATH=${USP_DB_PATH:-/data/usp/wafmgmt.db}
+      - IDENTITY_DB_PATH=${IDENTITY_DB_PATH:-/data/identity/identity.db}
+      # MQTT broker (may stay on a separate host)
+      - BROKER_HOST=${BROKER_HOST:-192.168.1.10}
+      - BROKER_PORT=${BROKER_PORT:-1883}
+      # WireGuard
+      - WG_CONFIG_DIR=${WG_CONFIG_DIR:-/data/wireguard}
+      - DEFAULT_WAN_ENDPOINT=${DEFAULT_WAN_ENDPOINT:-}
+      - DEFAULT_DNS=${DEFAULT_DNS:-10.8.0.1}
+      - DEFAULT_WG_ADDRESS=${DEFAULT_WG_ADDRESS:-10.8.0.1/24}
+      - DEFAULT_WG_PORT=${DEFAULT_WG_PORT:-51820}
+      - WG_INTERFACE=${WG_INTERFACE:-wg0}
+      - DEFAULT_ALLOWED_IPS=${DEFAULT_ALLOWED_IPS:-10.8.0.0/24}
+      # nginx route reload via docker.sock
+      - NGINX_CONTAINER=${NGINX_CONTAINER:-proxy-tls}
+      - NGINX_CERT=${NGINX_CERT:-/etc/nginx/certs/server.crt}
+      - NGINX_KEY=${NGINX_KEY:-/etc/nginx/certs/server.key}
+      - DOCKER_SOCK=${DOCKER_SOCK:-/var/run/docker.sock}
+      # Terminal gateway (WebSocket /ssh)
+      - SSH_USER=${SSH_USER:-root}
+      - SSH_PASSWORD=${SSH_PASSWORD:-}
+      - SSH_CONNECT_TIMEOUT=${SSH_CONNECT_TIMEOUT:-10}
+    volumes:
+      # Host data root (SQLite DBs, nginx conf, WG keys, certs).
+      # Recommended on a server: /srv/wafmgmt
+      - ${WAFMGMT_DATA_DIR:-../../data}:/data
+      - /var/run/docker.sock:/var/run/docker.sock
