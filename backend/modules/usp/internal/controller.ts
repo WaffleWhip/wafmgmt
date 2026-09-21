@@ -1,6 +1,7 @@
 import mqtt from "mqtt";
 import protobuf from "protobufjs";
 import { Database } from "bun:sqlite";
+import { execFile } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync, unlinkSync } from "fs";
 import { join } from "path";
 
@@ -291,6 +292,52 @@ await protoRoot.load([join(import.meta.dir, "usp_record.proto"), join(import.met
 const RecordType = protoRoot.lookupType("usp_record.Record");
 const MsgType = protoRoot.lookupType("usp.Msg");
 
+// In-memory ring buffer for broker log lines streamed over $SYS/broker/log/#
+const BROKER_LOG_LIMIT = 500;
+const brokerLogBuffer: string[] = [];
+
+// Broker log file access when the broker runs on a separate host: tail it over
+// SSH (sshpass is installed in the app image). Falls back to a local file.
+const BROKER_LOG_TARGET = process.env.BROKER_LOG_SSH || `root@${BROKER_HOST}`;
+const BROKER_LOG_PATH = process.env.BROKER_LOG_PATH || "/root/wafmgmt/data/mosquitto/log/mosquitto.log";
+let brokerLogCache: { ts: number; logs: string[]; source: string } = { ts: 0, logs: [], source: "none" };
+
+function sshBrokerLogs(limit: number): Promise<{ logs: string[]; source: string } | null> {
+  const pass = process.env.SSH_PASSWORD || "";
+  const remote = `tail -n ${Math.max(limit, 1)} '${BROKER_LOG_PATH}'`;
+  const args = [
+    ...(pass ? ["-p", pass] : []),
+    "ssh", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=4", BROKER_LOG_TARGET, remote,
+  ];
+  return new Promise((resolve) => {
+    execFile(pass ? "sshpass" : "ssh", args, { timeout: 8000, maxBuffer: 8 * 1024 * 1024 }, (err, stdout) => {
+      if (err || !stdout) return resolve(null);
+      resolve({ logs: stdout.split("\n").filter((l) => l.trim().length > 0), source: "ssh-tail" });
+    });
+  });
+}
+
+async function readBrokerLogs(limit: number): Promise<{ logs: string[]; source: string }> {
+  const now = Date.now();
+  if (now - brokerLogCache.ts > 2000) {
+    const remote = await sshBrokerLogs(BROKER_LOG_LIMIT);
+    if (remote) {
+      brokerLogCache = { ts: now, logs: remote.logs, source: remote.source };
+    } else if (brokerLogBuffer.length > 0) {
+      brokerLogCache = { ts: now, logs: brokerLogBuffer.slice(), source: "sys-topic" };
+    } else {
+      const logPath = join(DATA_DIR, "mosquitto", "log", "mosquitto.log");
+      if (existsSync(logPath)) {
+        try {
+          const lines = readFileSync(logPath, "utf-8").split("\n").filter((l) => l.trim().length > 0);
+          brokerLogCache = { ts: now, logs: lines, source: "file" };
+        } catch {}
+      }
+    }
+  }
+  return { logs: brokerLogCache.logs.slice(-limit), source: brokerLogCache.source };
+}
+
 // Pending requests map: msg_id -> { resolve, reject, timer }
 const pendingRequests = new Map<string, { resolve: (val: any) => void; reject: (err: any) => void; timer: Timer; sentTopic?: string }>();
 
@@ -305,13 +352,26 @@ const mqttClient = mqtt.connect(BROKER_URL, {
 
 mqttClient.on("connect", () => {
   console.log(`[+] Connected to MQTT broker ${BROKER_URL}`);
-  mqttClient.subscribe(["usp/#", "hdm/#", CONTROLLER_TOPIC, AGENT_TOPIC], { qos: 0 }, (err) => {
+  mqttClient.subscribe(["usp/#", "hdm/#", CONTROLLER_TOPIC, AGENT_TOPIC, "$SYS/broker/log/#"], { qos: 0 }, (err) => {
     if (err) console.error(`[!] Failed to subscribe:`, err);
-    else console.log(`[+] Subscribed to topics: usp/#, hdm/#, ${CONTROLLER_TOPIC}, ${AGENT_TOPIC}`);
+    else console.log(`[+] Subscribed to topics: usp/#, hdm/#, ${CONTROLLER_TOPIC}, ${AGENT_TOPIC}, $SYS/broker/log/#`);
   });
 });
 
 mqttClient.on("message", (topic, payload) => {
+  // Broker log lines arrive on $SYS/broker/log/<level> when mosquitto.conf has
+  // `log_dest topic`. Keep them in a ring buffer for the Live Broker Log panel.
+  if (topic.startsWith("$SYS/broker/log/")) {
+    const line = payload.toString().trim();
+    if (line) {
+      brokerLogBuffer.push(line);
+      if (brokerLogBuffer.length > BROKER_LOG_LIMIT) {
+        brokerLogBuffer.splice(0, brokerLogBuffer.length - BROKER_LOG_LIMIT);
+      }
+    }
+    return;
+  }
+
   try {
     const record = RecordType.decode(payload) as any;
     const fromId = record.from_id;
@@ -943,18 +1003,7 @@ export async function uspFetch(req: Request): Promise<Response> {
     // GET /api/usp/broker-logs (Live Mosquitto Broker Logs)
     if (url.pathname === "/api/usp/broker-logs" && req.method === "GET") {
       const limit = parseInt(url.searchParams.get("limit") || "100", 10);
-      const logPath = join(DATA_DIR, "mosquitto", "log", "mosquitto.log");
-      if (!existsSync(logPath)) {
-        return jsonResponse({ logs: [] });
-      }
-      try {
-        const content = readFileSync(logPath, "utf-8");
-        const lines = content.split("\n").filter((l) => l.trim().length > 0);
-        const sliced = lines.slice(-limit);
-        return jsonResponse({ logs: sliced });
-      } catch (err: any) {
-        return jsonResponse({ error: err.message, logs: [] }, 500);
-      }
+      return jsonResponse(await readBrokerLogs(limit));
     }
 
     // GET /api/usp/templates — list template files from DATA_DIR/usp-templates

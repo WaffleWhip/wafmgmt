@@ -671,6 +671,7 @@
         options={deviceOptions}
         label="Agent:"
         placeholder="Select ONT"
+        className="w-64"
       />
 
       <button
@@ -688,7 +689,7 @@
         title="Toggle live broker log panel"
       >
         <Terminal class="w-3.5 h-3.5 {showLiveBrokerLog ? 'text-accent-400' : 'text-stone-600'}" />
-        <span>Live Broker Log</span>
+        <span>Broker Log</span>
         {#if showLiveBrokerLog}
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5"></span>
         {/if}

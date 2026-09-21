@@ -1,6 +1,6 @@
 import { db } from "./storage";
 
-const USP_SERVICE_URL = process.env.USP_SERVICE_URL || "http://127.0.0.1:8000";
+const USP_SERVICE_URL = process.env.USP_SERVICE_URL || `http://127.0.0.1:${process.env.PORT || 3000}`;
 const DEFAULT_INTERVAL_SEC = Math.max(5, parseInt(process.env.TELEMETRY_INTERVAL || "15", 10) || 15);
 const REQUEST_TIMEOUT_MS = 6000;
 const RETENTION_MS = 24 * 3600 * 1000;
@@ -112,7 +112,7 @@ async function uspGet(deviceId: string, paths: string[], timeoutSec = 6): Promis
 
 async function listDevices(): Promise<DeviceLike[]> {
   try {
-    const res = await fetch(`${USP_SERVICE_URL}/api/devices`);
+    const res = await fetch(`${USP_SERVICE_URL}/api/usp/devices`);
     const data = await res.json();
     return (data?.devices || []) as DeviceLike[];
   } catch {

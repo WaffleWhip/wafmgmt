@@ -61,7 +61,7 @@
     type="button"
     onclick={() => { if (!disabled) open = !open; }}
     {disabled}
-    class="select-trigger {open ? 'select-trigger-open' : ''}"
+    class="select-trigger w-full {open ? 'select-trigger-open' : ''}"
   >
     <div class="flex items-center gap-1.5 truncate text-left">
       {#if label}
